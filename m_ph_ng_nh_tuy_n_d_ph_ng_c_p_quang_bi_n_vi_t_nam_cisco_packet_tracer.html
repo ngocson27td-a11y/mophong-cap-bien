@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mô phỏng Cisco Packet Tracer | Định tuyến Dự phòng Cáp quang Biển (OSPF Area 0)</title>
+  <style>
+    /* =====================================================================
+       1. THIẾT LẬP GIAO DIỆN & BIẾN MÀU (THUẦN CSS3 - KHÔNG PHỤ THUỘC CDN)
+       ===================================================================== */
+    :root {
+      --bg-app: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-card: #0f172a;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Thanh cuộn gọn gàng */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1120;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* =====================================================================
+       2. HEADER & KPI BAR
+       ===================================================================== */
+    .topbar {
+      background: #111827;
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .topbar-inner {
+      max-width: 1580px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #1d4ed8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge-ospf {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .kpi-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kpi-pill {
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kpi-label {
+      color: var(--text-muted);
+    }
+
+    .kpi-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .dot-green { background: #10b981; box-shadow: 0 0 8px #10b981; }
+    .dot-amber { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+    .dot-red   { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .dot-blue  { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+
+    /* =====================================================================
+       3. CONTAINER & THANH KỊCH BẢN (5 KỊCH BẢN MÔ PHỎNG)
+       ===================================================================== */
+    .container {
+      max-width: 1580px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px 20px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .section-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .section-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 1200px) {
+      .scenario-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 720px) {
+      .scenario-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .scenario-btn {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 11px;
+      padding: 10px 12px;
+      text-align: left;
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-family: inherit;
+    }
+
+    .scenario-btn:hover {
+      border-color: #64748b;
+      transform: translateY(-1px);
+    }
+
+    .scenario-btn.active {
+      background: rgba(14, 165, 233, 0.16);
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+    }
+
+    .scenario-btn.active-danger {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: #ef4444;
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35);
+    }
+
+    .kb-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .kb-1 { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .kb-2 { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .kb-3 { background: rgba(249, 115, 22, 0.2); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.4); }
+    .kb-4 { background: rgba(239, 68, 68, 0.22); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); }
+    .kb-5 { background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.4); }
+
+    .kb-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .kb-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
+    /* =====================================================================
+       4. KHUNG CISCO PACKET TRACER LOGICAL WORKSPACE (SVG)
+       ===================================================================== */
+    .pt-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 9px 12px;
+      margin-bottom: 12px;
+    }
+
+    .dest-selector {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dest-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-right: 4px;
+    }
+
+    .dest-btn {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .dest-btn:hover {
+      border-color: #94a3b8;
+      color: #fff;
+    }
+
+    .dest-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.45);
+    }
+
+    .btn-ping {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 3px 12px rgba(16, 185, 129, 0.35);
+      transition: transform 0.12s, filter 0.15s;
+      font-family: inherit;
+    }
+
+    .btn-ping:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .pt-canvas-wrap {
+      width: 100%;
+      background: #ffffff;
+      border: 2px solid #475569;
+      border-radius: 12px;
+      overflow-x: auto;
+      position: relative;
+      box-shadow: inset 0 0 0 1px #cbd5e1;
+    }
+
+    /* Thanh trạng thái kiểu Packet Tracer phía trên vùng vẽ */
+    .pt-mode-bar {
+      background: #e2e8f0;
+      border-bottom: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #0f172a;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .pt-tabs-mock {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pt-tab-pill {
+      padding: 2px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .pt-tab-logical {
+      background: #0284c7;
+      color: #ffffff;
+    }
+    .pt-tab-sim {
+      background: #cbd5e1;
+      color: #334155;
+    }
+
+    .pt-legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+      color: #334155;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* SVG Topology tường minh kích thước để không bao giờ bị 0px */
+    #packetTracerSvg {
+      display: block;
+      width: 100%;
+      min-width: 960px;
+      height: 560px;
+      min-height: 520px;
+      user-select: none;
+    }
+
+    .link-hitarea {
+      cursor: pointer;
+    }
+    .link-hitarea:hover + .wan-line {
+      stroke-width: 4.5 !important;
+      filter: drop-shadow(0 0 4px rgba(2, 132, 199, 0.7));
+    }
+
+    .severed-dash {
+      stroke-dasharray: 8 6;
+      animation: marchDash 1s linear infinite;
+    }
+    @keyframes marchDash {
+      to { stroke-dashoffset: -28; }
+    }
+
+    .pulse-ring {
+      animation: ringPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes ringPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    /* =====================================================================
+       5. HAI NHÓM CÔNG TẮC ĐIỀU KHIỂN CỔNG (VN & R_HK)
+       ===================================================================== */
+    .switches-layout {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+    @media (max-width: 960px) {
+      .switches-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .switch-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .switch-box-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .switch-box-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .switch-box-sub {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .btn-mini {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+    .btn-mini-green {
+      background: rgba(16, 185, 129, 0.18);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+    .btn-mini-red {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.45);
+    }
+
+    .cable-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 560px) {
+      .cable-grid-6 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .hk-grid-3 {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .port-item {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all 0.15s;
+    }
+    .port-item.down {
+      background: rgba(127, 29, 29, 0.28);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .port-info {
+      min-width: 0;
+    }
+    .port-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .port-code {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: #38bdf8;
+    }
+    .port-cost {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      background: #0f172a;
+      color: #cbd5e1;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .port-sub {
+      font-size: 10.5px;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    /* Toggle Switch thuần CSS */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #475569;
+      transition: 0.2s;
+      border-radius: 22px;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.2s;
+      border-radius: 50%;
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #10b981;
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(18px);
+    }
+
+    /* =====================================================================
+       6. HÀNG DƯỚI: BẢNG THÔNG SỐ 4 HUB & CỬA SỔ CISCO IOS CLI
+       ===================================================================== */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    @media (max-width: 1120px) {
+      .bottom-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #334155;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #0f172a;
+      color: #cbd5e1;
+      font-weight: 700;
+      padding: 9px 10px;
+      border-bottom: 1px solid #334155;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #1e293b;
+      vertical-align: middle;
+    }
+
+    tr.hub-row {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    tr.hub-row:hover {
+      background: rgba(56, 189, 248, 0.08);
+    }
+    tr.hub-row.selected {
+      background: rgba(56, 189, 248, 0.15);
+    }
+    tr.hub-row.isolated {
+      background: rgba(239, 68, 68, 0.14);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 10.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-ok { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .badge-backup { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.35); }
+    .badge-warn { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-dead { background: rgba(239, 68, 68, 0.22); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); }
+
+    /* Khung phân tích cơ chế dưới bảng */
+    .insight-panel {
+      margin-top: 14px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-left: 4px solid #38bdf8;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .insight-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .insight-body {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.55;
+    }
+    .insight-body ul {
+      padding-left: 18px;
+      margin-top: 5px;
+    }
+    .insight-body li {
+      margin-bottom: 4px;
+    }
+
+    /* Cửa sổ Cisco IOS CLI */
+    .cli-card {
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .cli-header {
+      background: #111827;
+      padding: 9px 14px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .mac-dots {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mac-dots span {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .cli-tabs {
+      background: #0f172a;
+      padding: 8px 10px 0;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .cli-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 7px 7px 0 0;
+      padding: 6px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      cursor: pointer;
+    }
+    .cli-tab:hover {
+      color: #e2e8f0;
+    }
+    .cli-tab.active {
+      background: #050811;
+      color: #38bdf8;
+      border-color: #334155;
+    }
+
+    .cli-screen {
+      background: #050811;
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.55;
+      padding: 14px;
+      min-height: 330px;
+      max-height: 410px;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    .cli-syslog {
+      background: #0b1120;
+      border-top: 1px solid #1e293b;
+      padding: 7px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #fcd34d;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    /* Tooltip nổi & Toast */
+    .floating-tooltip {
+      position: fixed;
+      z-index: 60;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid #475569;
+      color: #f8fafc;
+      padding: 8px 11px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      max-width: 300px;
+      display: none;
+    }
+
+    .toast-box {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 70;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid #38bdf8;
+      color: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 10px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+      max-width: 390px;
+      font-size: 12px;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    .toast-box.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 12px 16px;
+      font-size: 11.5px;
+      color: #94a3b8;
+      border-top: 1px solid #1e293b;
+      background: #0b1120;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =====================================================================
+       HEADER BAR
+       ===================================================================== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-icon">PT</div>
+        <div>
+          <div class="brand-title">
+            <span>MÔ PHỎNG CISCO PACKET TRACER: ĐỊNH TUYẾN DỰ PHÒNG CÁP QUANG BIỂN</span>
+            <span class="badge-ospf">OSPF Area 0 • Nhóm 3</span>
+          </div>
+          <div class="brand-sub">
+            3 Phân vùng (Việt Nam – 6 Tuyến Cáp Biển – 4 Hub Quốc tế) • Thuật toán Dijkstra &amp; Cân bằng tải ECMP
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-group">
+        <div class="kpi-pill">
+          <span class="dot dot-green" id="kpiVnDot"></span>
+          <span class="kpi-label">Cáp phía VN:</span>
+          <span class="kpi-val" id="kpiVnCount">6/6 UP</span>
+        </div>
+        <div class="kpi-pill">
+          <span class="dot dot-green" id="kpiHkDot"></span>
+          <span class="kpi-label">Cổng Hub HK:</span>
+          <span class="kpi-val" id="kpiHkCount">3/3 UP</span>
+        </div>
+        <div class="kpi-pill">
+          <span class="kpi-label">Láng giềng VN:</span>
+          <span class="kpi-val" style="color:#38bdf8;" id="kpiNeighbors">6 FULL</span>
+        </div>
+        <div class="kpi-pill">
+          <span class="kpi-label">Trạng thái:</span>
+          <span class="kpi-val" style="color:#10b981;" id="kpiStatus">TỐI ƯU</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tooltip & Toast -->
+  <div id="ptTooltip" class="floating-tooltip"></div>
+  <div id="ptToast" class="toast-box">
+    <div id="toastTitle" style="font-weight:700; color:#38bdf8;">Thông báo</div>
+    <div id="toastBody" style="color:#cbd5e1; margin-top:2px;"></div>
+  </div>
+
+  <!-- =====================================================================
+       MAIN WORKSPACE
+       ===================================================================== -->
+  <main class="container">
+
+    <!-- 1. THANH CHỌN NHANH 5 KỊCH BẢN MÔ PHỎNG -->
+    <section class="card">
+      <div class="section-header">
+        <div>
+          <div class="section-title">1. Bảng điều khiển 5 Kịch bản Kiểm thử (Mục 4.3.3 &amp; Trường hợp cô lập Hub)</div>
+          <div class="section-hint">Chọn nhanh kịch bản bên dưới hoặc click trực tiếp lên bất kỳ sợi cáp nào trên sơ đồ Packet Tracer</div>
+        </div>
+        <span class="badge-ospf">Single Area 0 • Hello 10s / Dead 40s</span>
+      </div>
+
+      <div class="scenario-grid">
+        <button class="scenario-btn active" id="scBtn1" onclick="applyScenario(1)">
+          <span class="kb-tag kb-1">KB1</span>
+          <div>
+            <div class="kb-name">Hoạt động bình thường (6/6)</div>
+            <div class="kb-desc">Tất cả tuyến UP, lưu lượng đi theo đường chính tối ưu Cost</div>
+          </div>
+        </button>
+
+        <button class="scenario-btn" id="scBtn2" onclick="applyScenario(2)">
+          <span class="kb-tag kb-2">KB2</span>
+          <div>
+            <div class="kb-name">Đứt 1 tuyến AAG (S0/0/0)</div>
+            <div class="kb-desc">HK chuyển sang APG (Cost 20), Âu-Mỹ sang AAE-1 (Cost 25)</div>
+          </div>
+        </button>
+
+        <button class="scenario-btn" id="scBtn3" onclick="applyScenario(3)">
+          <span class="kb-tag kb-3">KB3</span>
+          <div>
+            <div class="kb-name">Đứt 3 tuyến (AAG, APG, IA)</div>
+            <div class="kb-desc">HK đi vòng 6 hop qua Nhật &amp; Singapore (ECMP Cost 37)</div>
+          </div>
+        </button>
+
+        <button class="scenario-btn" id="scBtn4" onclick="applyScenario(4)">
+          <span class="kb-tag kb-4">KB4</span>
+          <div>
+            <div class="kb-name">Cô lập Hub Hồng Kông</div>
+            <div class="kb-desc">Ngắt Gi0/1, Gi0/2, S0/0/0 trên R_HK (100% Packet Loss)</div>
+          </div>
+        </button>
+
+        <button class="scenario-btn" id="scBtn5" onclick="applyScenario(5)">
+          <span class="kb-tag kb-5">KB5</span>
+          <div>
+            <div class="kb-name">Khôi phục (no shutdown)</div>
+            <div class="kb-desc">Mở lại toàn bộ cổng, hội tụ về tuyến chính (RFC 9855)</div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. SƠ ĐỒ CISCO PACKET TRACER LOGICAL WORKSPACE + 2 NHÓM CÔNG TẮC -->
+    <section class="card">
+      <div class="section-header">
+        <div>
+          <div class="section-title">2. Sơ đồ Mạng Mô phỏng Cisco Packet Tracer (Logical Workspace)</div>
+          <div class="section-hint">Click lên dây nối WAN để ngắt (shutdown) hoặc nối lại (no shutdown) • Chấm xanh = UP, chấm đỏ = DOWN</div>
+        </div>
+      </div>
+
+      <!-- Thanh chọn đích kiểm thử & nút gửi gói tin -->
+      <div class="pt-toolbar">
+        <div class="dest-selector">
+          <span class="dest-label">Đích kiểm thử từ PC_VN1 (192.168.1.10):</span>
+          <button class="dest-btn active" data-hub="R_HK" onclick="selectTargetHub('R_HK')">Hồng Kông (10.20.1.10)</button>
+          <button class="dest-btn" data-hub="R_SG" onclick="selectTargetHub('R_SG')">Singapore (10.10.1.10)</button>
+          <button class="dest-btn" data-hub="R_JP" onclick="selectTargetHub('R_JP')">Nhật Bản (10.30.1.10)</button>
+          <button class="dest-btn" data-hub="R_US_EU" onclick="selectTargetHub('R_US_EU')">Âu – Mỹ (10.40.1.10)</button>
+        </div>
+
+        <button class="btn-ping" onclick="runPingTest()">
+          <span>▶ Gửi gói tin kiểm thử (Ping / Tracert)</span>
+        </button>
+      </div>
+
+      <!-- Khung mô phỏng Packet Tracer với 3 vùng màu đặc trưng -->
+      <div class="pt-canvas-wrap">
+        <div class="pt-mode-bar">
+          <div class="pt-tabs-mock">
+            <span class="pt-tab-pill pt-tab-logical">Logical</span>
+            <span class="pt-tab-pill pt-tab-sim">Simulation: OSPF / ICMP</span>
+            <span id="ptStatusBanner" style="margin-left:6px; color:#0369a1; font-family:var(--font-mono);">
+              Đích: Server_HK (10.20.1.10) | Cost WAN: 15 (Metric: 16) | 4 Hop
+            </span>
+          </div>
+
+          <div class="pt-legend">
+            <span class="legend-item"><span style="width:9px;height:9px;border-radius:50%;background:#16a34a;display:inline-block;"></span> Cổng UP</span>
+            <span class="legend-item"><span style="width:9px;height:9px;border-radius:50%;background:#dc2626;display:inline-block;"></span> Cổng DOWN</span>
+            <span class="legend-item"><span style="width:16px;height:4px;background:#0284c7;display:inline-block;border-radius:2px;"></span> Tuyến chính/dự phòng</span>
+            <span class="legend-item"><span style="width:16px;height:4px;background:#d97706;display:inline-block;border-radius:2px;"></span> Cân bằng tải ECMP</span>
+          </div>
+        </div>
+
+        <!-- SƠ ĐỒ SVG TƯỜNG MINH KÍCH THƯỚC -->
+        <svg id="packetTracerSvg" viewBox="0 0 1120 560" width="100%" height="560" style="display:block; min-height:520px;">
+          <defs>
+            <!-- Biểu tượng Router Cisco 1941 (Tuyến cáp biển) -->
+            <g id="icon-router-cable">
+              <ellipse cx="0" cy="8" rx="21" ry="10" fill="#0369a1" stroke="#0c4a6e" stroke-width="1.6" />
+              <rect x="-21" y="-6" width="42" height="14" fill="#0284c7" />
+              <line x1="-21" y1="-6" x2="-21" y2="8" stroke="#0c4a6e" stroke-width="1.6" />
+              <line x1="21" y1="-6" x2="21" y2="8" stroke="#0c4a6e" stroke-width="1.6" />
+              <ellipse cx="0" cy="-6" rx="21" ry="10" fill="#38bdf8" stroke="#0c4a6e" stroke-width="1.6" />
+              <path d="M-9 -9 L-3 -6 L-9 -3 M9 -9 L3 -6 L9 -3 M-3 -11 L0 -8 L3 -11 M-3 -1 L0 -4 L3 -1"
+                stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" />
+            </g>
+
+            <!-- Biểu tượng Router Cisco 2911 (Biên VN & Hub Quốc tế) -->
+            <g id="icon-router-hub">
+              <ellipse cx="0" cy="9" rx="24" ry="11" fill="#1e3a8a" stroke="#172554" stroke-width="1.8" />
+              <rect x="-24" y="-7" width="48" height="16" fill="#1d4ed8" />
+              <line x1="-24" y1="-7" x2="-24" y2="9" stroke="#172554" stroke-width="1.8" />
+              <line x1="24" y1="-7" x2="24" y2="9" stroke="#172554" stroke-width="1.8" />
+              <ellipse cx="0" cy="-7" rx="24" ry="11" fill="#3b82f6" stroke="#172554" stroke-width="1.8" />
+              <path d="M-10 -10 L-4 -7 L-10 -4 M10 -10 L4 -7 L10 -4 M-4 -12 L0 -9 L4 -12 M-4 -2 L0 -5 L4 -2"
+                stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" />
+            </g>
+
+            <!-- Biểu tượng Switch Cisco 2960-24TT -->
+            <g id="icon-switch">
+              <rect x="-22" y="-10" width="44" height="20" rx="3" fill="#0284c7" stroke="#0c4a6e" stroke-width="1.5" />
+              <path d="M-15 -4 L-6 -4 M-8 -6 L-6 -4 L-8 -2 M15 -4 L6 -4 M8 -6 L6 -4 L8 -2 M-15 4 L-6 4 M-8 2 L-6 4 L-8 6 M15 4 L6 4 M8 2 L6 4 L8 6"
+                stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" />
+            </g>
+
+            <!-- Biểu tượng PC-PT -->
+            <g id="icon-pc">
+              <rect x="-14" y="-14" width="28" height="19" rx="2" fill="#334155" stroke="#0f172a" stroke-width="1.4" />
+              <rect x="-11" y="-11" width="22" height="13" fill="#bae6fd" />
+              <path d="M-6 5 L6 5 L9 10 L-9 10 Z" fill="#475569" stroke="#0f172a" stroke-width="1" />
+            </g>
+
+            <!-- Biểu tượng Server-PT -->
+            <g id="icon-server">
+              <rect x="-12" y="-17" width="24" height="34" rx="2.5" fill="#334155" stroke="#0f172a" stroke-width="1.5" />
+              <rect x="-9" y="-13" width="18" height="4" fill="#94a3b8" />
+              <rect x="-9" y="-7" width="18" height="4" fill="#94a3b8" />
+              <circle cx="-6" cy="9" r="2" fill="#22c55e" />
+              <circle cx="0" cy="9" r="2" fill="#38bdf8" />
+            </g>
+          </defs>
+
+          <!-- ===============================================================
+               3 KHU VỰC MÀU ĐẶC TRƯNG CỦA CISCO PACKET TRACER
+               =============================================================== -->
+          <!-- Khu vực A: Việt Nam -->
+          <rect x="8" y="8" width="264" height="544" rx="8" fill="#dff5f8" stroke="#67e8f9" stroke-width="1.5" />
+          <rect x="18" y="16" width="244" height="24" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="140" y="32" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="800">KHU VỰC A: VIỆT NAM (LAN &amp; ISP)</text>
+
+          <!-- Khu vực B: Tuyến cáp quang biển -->
+          <rect x="278" y="8" width="384" height="544" rx="8" fill="#dff5df" stroke="#86efac" stroke-width="1.5" />
+          <rect x="330" y="16" width="280" height="24" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="470" y="32" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="800">KHU VỰC B: TUYẾN CÁP QUANG BIỂN</text>
+
+          <!-- Khu vực C: Hub Quốc tế -->
+          <rect x="668" y="8" width="444" height="544" rx="8" fill="#fcf9c6" stroke="#fde047" stroke-width="1.5" />
+          <rect x="780" y="16" width="220" height="24" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+          <text x="890" y="32" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="800">KHU VỰC C: HUB QUỐC TẾ</text>
+
+          <!-- Các lớp vẽ động bằng JavaScript -->
+          <g id="layerLanLinks"></g>
+          <g id="layerWanLinks"></g>
+          <g id="layerActivePaths"></g>
+          <g id="layerCostLabels"></g>
+          <g id="layerDevices"></g>
+          <g id="layerAlerts"></g>
+          <g id="layerPackets"></g>
+        </svg>
+      </div>
+
+      <!-- HAI NHÓM CÔNG TẮC ĐIỀU KHIỂN CỔNG -->
+      <div class="switches-layout">
+        <!-- Nhóm 1: 6 tuyến cáp phía Việt Nam -->
+        <div class="switch-box">
+          <div class="switch-box-head">
+            <div>
+              <div class="switch-box-title">Nhóm 1: 6 Tuyến Cáp Phía Việt Nam (R_VN_ISP)</div>
+              <div class="switch-box-sub">Tắt/mở các cổng Serial từ S0/0/0 đến S0/2/1 trên R_VN_ISP</div>
+            </div>
+            <button class="btn-mini btn-mini-green" onclick="restoreVnCables()">Mở tất cả VN</button>
+          </div>
+          <div class="cable-grid-6" id="vnCableSwitches"></div>
+        </div>
+
+        <!-- Nhóm 2: 3 cổng vào Hub Hồng Kông -->
+        <div class="switch-box">
+          <div class="switch-box-head">
+            <div>
+              <div class="switch-box-title">Nhóm 2: 3 Cổng Hub Hồng Kông (R_HK)</div>
+              <div class="switch-box-sub">Ngắt trực tiếp tại R_HK để mô phỏng cô lập Hồng Kông (KB4)</div>
+            </div>
+            <button class="btn-mini btn-mini-red" id="btnToggleHkIsolate" onclick="toggleIsolateHK()">Cô lập R_HK</button>
+          </div>
+          <div class="hk-grid-3" id="hkPortSwitches"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. BẢNG THÔNG SỐ 4 HUB QUỐC TẾ & CỬA SỔ CISCO IOS CLI -->
+    <div class="bottom-grid">
+      <!-- Cột trái: Bảng tổng hợp 4 Hub + Phân tích kỹ thuật -->
+      <section class="card">
+        <div class="section-header">
+          <div>
+            <div class="section-title">3. Bảng Tổng hợp Thông số Định tuyến 4 Hub Quốc tế</div>
+            <div class="section-hint">Click vào từng dòng Hub để xem luồng gói tin kiểm thử tương ứng</div>
+          </div>
+          <span class="badge-ospf">Metric = Cost WAN + 1</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hub Quốc tế</th>
+                <th>Lộ trình OSPF hiện tại</th>
+                <th style="text-align:center;">Hop</th>
+                <th style="text-align:center;">Cost / Metric</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="hubMetricsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="insight-panel">
+          <div class="insight-title" id="insightTitle">Phân tích Kịch bản 1: Trạng thái vận hành bình thường (6/6 tuyến)</div>
+          <div class="insight-body" id="insightBody"></div>
+        </div>
+      </section>
+
+      <!-- Cột phải: Cửa sổ Cisco IOS CLI & PC_VN1 Command Prompt -->
+      <section class="cli-card">
+        <div class="cli-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="mac-dots">
+              <span style="background:#ef4444;"></span>
+              <span style="background:#f59e0b;"></span>
+              <span style="background:#10b981;"></span>
+            </div>
+            <span style="font-family:var(--font-mono); font-size:12px; font-weight:700; color:#e2e8f0;">
+              Cisco IOS CLI &amp; PC_VN1 Terminal
+            </span>
+          </div>
+          <button class="btn-ping" style="padding:4px 10px; font-size:11px;" onclick="runPingTest()">
+            ▶ Chạy Ping / Tracert
+          </button>
+        </div>
+
+        <div class="cli-tabs">
+          <button class="cli-tab active" id="tab-pc" onclick="switchCliTab('pc')">PC_VN1&gt; tracert &amp; ping</button>
+          <button class="cli-tab" id="tab-route" onclick="switchCliTab('route')">show ip route ospf</button>
+          <button class="cli-tab" id="tab-neighbor" onclick="switchCliTab('neighbor')">show ip ospf neighbor</button>
+          <button class="cli-tab" id="tab-config" onclick="switchCliTab('config')">Lệnh cấu hình IOS</button>
+        </div>
+
+        <div class="cli-screen" id="cliScreen"></div>
+        <div class="cli-syslog" id="cliSyslog">%OSPF-5-ADJCHG: Process 1, All 6 submarine cable neighbors in FULL state.</div>
+      </section>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    Ứng dụng Web Mô phỏng Mạng Máy Tính – Nhóm 3 • Mô hình Cisco Packet Tracer (OSPF Single Area 0) • Toàn bộ tọa độ, IP, Port và Cost đồng bộ 100% với báo cáo.
+  </footer>
+
+  <!-- =====================================================================
+       JAVASCRIPT ENGINE: ĐỒ THỊ MẠNG, DIJKSTRA + ECMP, SVG & CISCO IOS CLI
+       ===================================================================== -->
+  <script>
+    // 1. DANH SÁCH THIẾT BỊ TRONG MÔ HÌNH PACKET TRACER (TỌA ĐỘ TƯỜNG MINH)
+    const DEVICES = {
+      // Khu vực A: Việt Nam
+      PC_VN1:   { id: 'PC_VN1',   label: 'PC_VN1',   sub: '192.168.1.10', x: 52,  y: 130, icon: 'icon-pc',     desc: 'Máy trạm kiểm thử tại Việt Nam (GW: 192.168.1.1)' },
+      PC_VN2:   { id: 'PC_VN2',   label: 'PC_VN2',   sub: '192.168.1.11', x: 52,  y: 290, icon: 'icon-pc',     desc: 'Máy trạm nội bộ 2 (192.168.1.11/24)' },
+      PC_VN3:   { id: 'PC_VN3',   label: 'PC_VN3',   sub: '192.168.1.12', x: 52,  y: 450, icon: 'icon-pc',     desc: 'Máy trạm nội bộ 3 (192.168.1.12/24)' },
+      SW_VN:    { id: 'SW_VN',    label: 'SW_VN',    sub: '2960-24TT',    x: 136, y: 290, icon: 'icon-switch', desc: 'Switch LAN nội bộ ISP Việt Nam' },
+      R_VN_ISP: { id: 'R_VN_ISP', label: 'R_VN_ISP', sub: '192.168.1.1',  x: 224, y: 290, icon: 'icon-router-hub', desc: 'Router biên quốc tế Việt Nam (2911, RID 1.1.1.1)' },
+
+      // Khu vực B: 6 Tuyến cáp quang biển (1941)
+      R_AAG:  { id: 'R_AAG',  label: 'R_AAG',  sub: 'RID 2.2.2.1', x: 470, y: 85,  icon: 'icon-router-cable', desc: 'Tuyến AAG (Vũng Tàu) • Chính đi Hồng Kông & Âu-Mỹ' },
+      R_APG:  { id: 'R_APG',  label: 'R_APG',  sub: 'RID 2.2.2.2', x: 470, y: 168, icon: 'icon-router-cable', desc: 'Tuyến APG (Đà Nẵng) • Dự phòng 1 đi Hồng Kông & Nhật Bản' },
+      R_IA:   { id: 'R_IA',   label: 'R_IA',   sub: 'RID 2.2.2.3', x: 470, y: 251, icon: 'icon-router-cable', desc: 'Tuyến IA (Vũng Tàu) • Chính đi Singapore, Dự phòng 2 đi HK' },
+      R_AAE1: { id: 'R_AAE1', label: 'R_AAE1', sub: 'RID 2.2.2.4', x: 470, y: 334, icon: 'icon-router-cable', desc: 'Tuyến AAE-1 (Vũng Tàu) • Dự phòng hướng Tây đi Âu-Mỹ & SG' },
+      R_ADC:  { id: 'R_ADC',  label: 'R_ADC',  sub: 'RID 2.2.2.5', x: 470, y: 417, icon: 'icon-router-cable', desc: 'Tuyến ADC (Quy Nhơn) • Chính đi Nhật Bản' },
+      R_SJC2: { id: 'R_SJC2', label: 'R_SJC2', sub: 'RID 2.2.2.6', x: 470, y: 500, icon: 'icon-router-cable', desc: 'Tuyến SJC2 (Quy Nhơn) • Dự phòng đi Singapore & Nhật Bản' },
+
+      // Khu vực C: 4 Hub quốc tế + Switch + PC + Server
+      R_HK:    { id: 'R_HK',    label: 'R_HK',    sub: 'Hồng Kông', x: 770, y: 100, icon: 'icon-router-hub', hubName: 'Hồng Kông', subnet: '10.20.1.0/24', serverId: 'Server_HK',     serverIp: '10.20.1.10', baseCost: 15, desc: 'Hub Hồng Kông (2911, RID 3.3.3.1, LAN 10.20.1.0/24)' },
+      R_US_EU: { id: 'R_US_EU', label: 'R_US_EU', sub: 'Âu – Mỹ',   x: 770, y: 226, icon: 'icon-router-hub', hubName: 'Âu – Mỹ',   subnet: '10.40.1.0/24', serverId: 'Server_Global', serverIp: '10.40.1.10', baseCost: 20, desc: 'Hub Âu – Mỹ (2911, RID 3.3.3.4, LAN 10.40.1.0/24)' },
+      R_JP:    { id: 'R_JP',    label: 'R_JP',    sub: 'Nhật Bản',  x: 770, y: 352, icon: 'icon-router-hub', hubName: 'Nhật Bản',  subnet: '10.30.1.0/24', serverId: 'Server_JP',     serverIp: '10.30.1.10', baseCost: 17, desc: 'Hub Nhật Bản (2911, RID 3.3.3.3, LAN 10.30.1.0/24)' },
+      R_SG:    { id: 'R_SG',    label: 'R_SG',    sub: 'Singapore', x: 770, y: 478, icon: 'icon-router-hub', hubName: 'Singapore', subnet: '10.10.1.0/24', serverId: 'Server_SG',     serverIp: '10.10.1.10', baseCost: 20, desc: 'Hub Singapore (2911, RID 3.3.3.2, LAN 10.10.1.0/24)' },
+
+      SW_HK:    { id: 'SW_HK',    label: 'SW_HK',    sub: '', x: 895, y: 100, icon: 'icon-switch', desc: 'Switch LAN Hồng Kông' },
+      SW_US_EU: { id: 'SW_US_EU', label: 'SW_US_EU', sub: '', x: 895, y: 226, icon: 'icon-switch', desc: 'Switch LAN Âu – Mỹ' },
+      SW_JP:    { id: 'SW_JP',    label: 'SW_JP',    sub: '', x: 895, y: 352, icon: 'icon-switch', desc: 'Switch LAN Nhật Bản' },
+      SW_SG:    { id: 'SW_SG',    label: 'SW_SG',    sub: '', x: 895, y: 478, icon: 'icon-switch', desc: 'Switch LAN Singapore' },
+
+      Server_HK:     { id: 'Server_HK',     label: 'Server_HK',     sub: '10.20.1.10', x: 1035, y: 76,  icon: 'icon-server', desc: 'Server Hồng Kông (10.20.1.10)' },
+      PC_HK:         { id: 'PC_HK',         label: 'PC_HK',         sub: '10.20.1.11', x: 1035, y: 126, icon: 'icon-pc',     desc: 'PC Hồng Kông (10.20.1.11)' },
+      Server_Global: { id: 'Server_Global', label: 'Server_Global', sub: '10.40.1.10', x: 1035, y: 202, icon: 'icon-server', desc: 'Server Âu – Mỹ (10.40.1.10)' },
+      PC_Global:     { id: 'PC_Global',     label: 'PC_Global',     sub: '10.40.1.11', x: 1035, y: 252, icon: 'icon-pc',     desc: 'PC Âu – Mỹ (10.40.1.11)' },
+      Server_JP:     { id: 'Server_JP',     label: 'Server_JP',     sub: '10.30.1.10', x: 1035, y: 328, icon: 'icon-server', desc: 'Server Nhật Bản (10.30.1.10)' },
+      PC_JP:         { id: 'PC_JP',         label: 'PC_JP',         sub: '10.30.1.11', x: 1035, y: 378, icon: 'icon-pc',     desc: 'PC Nhật Bản (10.30.1.11)' },
+      Server_SG:     { id: 'Server_SG',     label: 'Server_SG',     sub: '10.10.1.10', x: 1035, y: 454, icon: 'icon-server', desc: 'Server Singapore (10.10.1.10)' },
+      PC_SG:         { id: 'PC_SG',         label: 'PC_SG',         sub: '10.10.1.11', x: 1035, y: 504, icon: 'icon-pc',     desc: 'PC Singapore (10.10.1.11)' },
+    };
+
+    const VN_CABLES = [
+      { edgeId: 'vn_aag',  shortName: 'AAG',   vnIf: 'Serial0/0/0', shortIf: 'S0/0/0', subnet: '172.16.1.0/30', vnIp: '172.16.1.1', peerIp: '172.16.1.2', rid: '2.2.2.1', cost: 10, role: 'Chính: Hồng Kông & Âu-Mỹ' },
+      { edgeId: 'vn_apg',  shortName: 'APG',   vnIf: 'Serial0/0/1', shortIf: 'S0/0/1', subnet: '172.16.2.0/30', vnIp: '172.16.2.1', peerIp: '172.16.2.2', rid: '2.2.2.2', cost: 10, role: 'Dự phòng 1: HK & Nhật Bản' },
+      { edgeId: 'vn_ia',   shortName: 'IA',    vnIf: 'Serial0/1/0', shortIf: 'S0/1/0', subnet: '172.16.3.0/30', vnIp: '172.16.3.1', peerIp: '172.16.3.2', rid: '2.2.2.3', cost: 15, role: 'Chính: SG | Dự phòng 2: HK' },
+      { edgeId: 'vn_aae1', shortName: 'AAE-1', vnIf: 'Serial0/1/1', shortIf: 'S0/1/1', subnet: '172.16.4.0/30', vnIp: '172.16.4.1', peerIp: '172.16.4.2', rid: '2.2.2.4', cost: 15, role: 'Dự phòng Tây: Âu-Mỹ & SG' },
+      { edgeId: 'vn_adc',  shortName: 'ADC',   vnIf: 'Serial0/2/0', shortIf: 'S0/2/0', subnet: '172.16.5.0/30', vnIp: '172.16.5.1', peerIp: '172.16.5.2', rid: '2.2.2.5', cost: 12, role: 'Chính: Nhật Bản' },
+      { edgeId: 'vn_sjc2', shortName: 'SJC2',  vnIf: 'Serial0/2/1', shortIf: 'S0/2/1', subnet: '172.16.6.0/30', vnIp: '172.16.6.1', peerIp: '172.16.6.2', rid: '2.2.2.6', cost: 12, role: 'Dự phòng 1: SG & Nhật Bản' },
+    ];
+
+    const HK_PORTS = [
+      { edgeId: 'aag_hk', cableName: 'AAG ↔ R_HK', hkIf: 'GigabitEthernet0/1', shortIf: 'Gi0/1',  subnet: '172.16.11.0/30', hkIp: '172.16.11.2', peerIp: '172.16.11.1', cost: 5,  role: 'Tuyến chính vào Hồng Kông' },
+      { edgeId: 'apg_hk', cableName: 'APG ↔ R_HK', hkIf: 'GigabitEthernet0/2', shortIf: 'Gi0/2',  subnet: '172.16.12.0/30', hkIp: '172.16.12.2', peerIp: '172.16.12.1', cost: 10, role: 'Dự phòng 1 vào Hồng Kông' },
+      { edgeId: 'ia_hk',  cableName: 'IA ↔ R_HK',  hkIf: 'Serial0/0/0',        shortIf: 'S0/0/0', subnet: '172.16.13.0/30', hkIp: '172.16.13.2', peerIp: '172.16.13.1', cost: 10, role: 'Dự phòng 2 vào Hồng Kông' },
+    ];
+
+    const WAN_LINKS = [
+      // 6 tuyến phía Việt Nam
+      { id: 'vn_aag',  a: 'R_VN_ISP', b: 'R_AAG',  cost: 10, subnet: '172.16.1.0/30',  ifA: 'S0/0/0', ipA: '172.16.1.1',  ifB: 'S0/0/0', ipB: '172.16.1.2',  isVn: true, t: 0.56 },
+      { id: 'vn_apg',  a: 'R_VN_ISP', b: 'R_APG',  cost: 10, subnet: '172.16.2.0/30',  ifA: 'S0/0/1', ipA: '172.16.2.1',  ifB: 'S0/0/0', ipB: '172.16.2.2',  isVn: true, t: 0.56 },
+      { id: 'vn_ia',   a: 'R_VN_ISP', b: 'R_IA',   cost: 15, subnet: '172.16.3.0/30',  ifA: 'S0/1/0', ipA: '172.16.3.1',  ifB: 'S0/0/0', ipB: '172.16.3.2',  isVn: true, t: 0.56 },
+      { id: 'vn_aae1', a: 'R_VN_ISP', b: 'R_AAE1', cost: 15, subnet: '172.16.4.0/30',  ifA: 'S0/1/1', ipA: '172.16.4.1',  ifB: 'S0/0/0', ipB: '172.16.4.2',  isVn: true, t: 0.56 },
+      { id: 'vn_adc',  a: 'R_VN_ISP', b: 'R_ADC',  cost: 12, subnet: '172.16.5.0/30',  ifA: 'S0/2/0', ipA: '172.16.5.1',  ifB: 'S0/0/0', ipB: '172.16.5.2',  isVn: true, t: 0.56 },
+      { id: 'vn_sjc2', a: 'R_VN_ISP', b: 'R_SJC2', cost: 12, subnet: '172.16.6.0/30',  ifA: 'S0/2/1', ipA: '172.16.6.1',  ifB: 'S0/0/0', ipB: '172.16.6.2',  isVn: true, t: 0.56 },
+
+      // Nhánh từ Router cáp sang 4 Hub quốc tế
+      { id: 'aag_hk',  a: 'R_AAG',  b: 'R_HK',    cost: 5,  subnet: '172.16.11.0/30', ifA: 'Gi0/0',  ipA: '172.16.11.1', ifB: 'Gi0/1',  ipB: '172.16.11.2', isHk: true, t: 0.48 },
+      { id: 'aag_us',  a: 'R_AAG',  b: 'R_US_EU', cost: 10, subnet: '172.16.41.0/30', ifA: 'Gi0/1',  ipA: '172.16.41.1', ifB: 'Gi0/1',  ipB: '172.16.41.2', t: 0.34 },
+      { id: 'apg_hk',  a: 'R_APG',  b: 'R_HK',    cost: 10, subnet: '172.16.12.0/30', ifA: 'Gi0/0',  ipA: '172.16.12.1', ifB: 'Gi0/2',  ipB: '172.16.12.2', isHk: true, t: 0.36 },
+      { id: 'apg_jp',  a: 'R_APG',  b: 'R_JP',    cost: 10, subnet: '172.16.31.0/30', ifA: 'Gi0/1',  ipA: '172.16.31.1', ifB: 'Gi0/1',  ipB: '172.16.31.2', t: 0.30 },
+      { id: 'ia_sg',   a: 'R_IA',   b: 'R_SG',    cost: 5,  subnet: '172.16.21.0/30', ifA: 'Gi0/0',  ipA: '172.16.21.1', ifB: 'Gi0/1',  ipB: '172.16.21.2', t: 0.30 },
+      { id: 'ia_hk',   a: 'R_IA',   b: 'R_HK',    cost: 10, subnet: '172.16.13.0/30', ifA: 'S0/0/1', ipA: '172.16.13.1', ifB: 'S0/0/0', ipB: '172.16.13.2', isHk: true, t: 0.28 },
+      { id: 'aae1_sg', a: 'R_AAE1', b: 'R_SG',    cost: 10, subnet: '172.16.22.0/30', ifA: 'Gi0/0',  ipA: '172.16.22.1', ifB: 'Gi0/2',  ipB: '172.16.22.2', t: 0.35 },
+      { id: 'aae1_us', a: 'R_AAE1', b: 'R_US_EU', cost: 10, subnet: '172.16.42.0/30', ifA: 'Gi0/1',  ipA: '172.16.42.1', ifB: 'Gi0/2',  ipB: '172.16.42.2', t: 0.66 },
+      { id: 'adc_jp',  a: 'R_ADC',  b: 'R_JP',    cost: 5,  subnet: '172.16.32.0/30', ifA: 'Gi0/0',  ipA: '172.16.32.1', ifB: 'Gi0/2',  ipB: '172.16.32.2', t: 0.48 },
+      { id: 'sjc2_sg', a: 'R_SJC2', b: 'R_SG',    cost: 10, subnet: '172.16.23.0/30', ifA: 'S0/0/1', ipA: '172.16.23.1', ifB: 'S0/0/0', ipB: '172.16.23.2', t: 0.50 },
+      { id: 'sjc2_jp', a: 'R_SJC2', b: 'R_JP',    cost: 10, subnet: '172.16.33.0/30', ifA: 'S0/1/0', ipA: '172.16.33.1', ifB: 'S0/1/0', ipB: '172.16.33.2', t: 0.34 },
+
+      // Trục liên kết giữa các Hub quốc tế
+      { id: 'jp_us',   a: 'R_JP',   b: 'R_US_EU', cost: 15, subnet: '172.16.92.0/30', ifA: 'S0/0/0', ipA: '172.16.92.1', ifB: 'S0/0/0', ipB: '172.16.92.2', t: 0.50 },
+      { id: 'sg_jp',   a: 'R_SG',   b: 'R_JP',    cost: 15, subnet: '172.16.91.0/30', ifA: 'S0/0/1', ipA: '172.16.91.1', ifB: 'S0/0/1', ipB: '172.16.91.2', t: 0.50 },
+    ];
+
+    const LAN_LINKS = [
+      { a: 'PC_VN1',   b: 'SW_VN' },
+      { a: 'PC_VN2',   b: 'SW_VN' },
+      { a: 'PC_VN3',   b: 'SW_VN' },
+      { a: 'SW_VN',    b: 'R_VN_ISP' },
+      { a: 'R_HK',     b: 'SW_HK' },
+      { a: 'SW_HK',    b: 'Server_HK' },
+      { a: 'SW_HK',    b: 'PC_HK' },
+      { a: 'R_US_EU',  b: 'SW_US_EU' },
+      { a: 'SW_US_EU', b: 'Server_Global' },
+      { a: 'SW_US_EU', b: 'PC_Global' },
+      { a: 'R_JP',     b: 'SW_JP' },
+      { a: 'SW_JP',    b: 'Server_JP' },
+      { a: 'SW_JP',    b: 'PC_JP' },
+      { a: 'R_SG',     b: 'SW_SG' },
+      { a: 'SW_SG',    b: 'Server_SG' },
+      { a: 'SW_SG',    b: 'PC_SG' },
+    ];
+
+    const HUB_IDS = ['R_HK', 'R_SG', 'R_JP', 'R_US_EU'];
+
+    // 2. TRẠNG THÁI MÔ PHỎNG
+    const state = {
+      scenario: 1,
+      selectedHub: 'R_HK',
+      cliTab: 'pc',
+      linkUp: {},
+      syslog: '%OSPF-5-ADJCHG: Process 1, All 6 submarine cable neighbors in FULL state.',
+      ecmpToggle: 0
+    };
+    WAN_LINKS.forEach(l => { state.linkUp[l.id] = true; });
+
+    function isHkIsolated() {
+      return !state.linkUp.aag_hk && !state.linkUp.apg_hk && !state.linkUp.ia_hk;
+    }
+
+    let toastTimer = null;
+    function notify(title, body, color = '#38bdf8') {
+      const box = document.getElementById('ptToast');
+      const tEl = document.getElementById('toastTitle');
+      const bEl = document.getElementById('toastBody');
+      box.style.borderColor = color;
+      tEl.style.color = color;
+      tEl.textContent = title;
+      bEl.textContent = body;
+      box.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => box.classList.remove('show'), 3600);
+    }
+
+    // 3. THUẬT TOÁN DIJKSTRA HỖ TRỢ CÂN BẰNG TẢI ECMP
+    function runDijkstra(sourceId) {
+      const adj = {};
+      Object.keys(DEVICES).forEach(k => { adj[k] = []; });
+
+      WAN_LINKS.forEach(l => {
+        if (!state.linkUp[l.id]) return;
+        adj[l.a].push({ to: l.b, cost: l.cost, link: l, nextIp: l.ipB });
+        adj[l.b].push({ to: l.a, cost: l.cost, link: l, nextIp: l.ipA });
+      });
+
+      const dist = {};
+      const parents = {};
+      Object.keys(DEVICES).forEach(k => {
+        dist[k] = Infinity;
+        parents[k] = [];
+      });
+      dist[sourceId] = 0;
+
+      const visited = new Set();
+      while (true) {
+        let u = null;
+        let minD = Infinity;
+        for (const id in dist) {
+          if (!visited.has(id) && dist[id] < minD) {
+            minD = dist[id];
+            u = id;
+          }
+        }
+        if (u === null) break;
+        visited.add(u);
+
+        for (const edge of adj[u]) {
+          const nd = dist[u] + edge.cost;
+          if (nd < dist[edge.to]) {
+            dist[edge.to] = nd;
+            parents[edge.to] = [{ from: u, link: edge.link, nextIp: edge.nextIp }];
+          } else if (nd === dist[edge.to]) {
+            parents[edge.to].push({ from: u, link: edge.link, nextIp: edge.nextIp });
+          }
+        }
+      }
+
+      function getRoutesTo(targetId) {
+        if (dist[targetId] === Infinity) {
+          return { reachable: false, cost: Infinity, metric: Infinity, paths: [] };
+        }
+        const paths = [];
+        function dfs(curr, nodes, links, ips) {
+          if (curr === sourceId) {
+            paths.push({ nodes: [sourceId, ...nodes], links: [...links], ips: [...ips] });
+            return;
+          }
+          for (const p of parents[curr]) {
+            dfs(p.from, [curr, ...nodes], [p.link, ...links], [p.nextIp, ...ips]);
+          }
+        }
+        dfs(targetId, [], [], []);
+        paths.sort((a, b) => a.nodes[1].localeCompare(b.nodes[1]));
+        return {
+          reachable: true,
+          cost: dist[targetId],
+          metric: dist[targetId] + 1,
+          paths
+        };
+      }
+
+      return { dist, getRoutesTo };
+    }
+
+    // 4. XỬ LÝ TƯƠNG TÁC KỊCH BẢN & CÔNG TẮC
+    function applyScenario(n) {
+      state.scenario = n;
+      WAN_LINKS.forEach(l => { state.linkUp[l.id] = true; });
+
+      if (n === 1) {
+        state.syslog = '%OSPF-5-ADJCHG: Process 1, All 6 submarine cable neighbors in FULL state.';
+        notify('Kịch bản 1: Bình thường (6/6 tuyến)', 'Tất cả 6 tuyến cáp biển đều UP, OSPF định tuyến tối ưu.', '#10b981');
+      } else if (n === 2) {
+        state.linkUp.vn_aag = false;
+        state.syslog = '%OSPF-5-ADJCHG: Process 1, Nbr 2.2.2.1 (R_AAG) on Serial0/0/0 from FULL to DOWN';
+        notify('Kịch bản 2: Đứt 1 tuyến AAG', 'Tắt S0/0/0. Hồng Kông chuyển sang APG (Cost 20), Âu-Mỹ sang AAE-1 (Cost 25).', '#f59e0b');
+      } else if (n === 3) {
+        state.linkUp.vn_aag = false;
+        state.linkUp.vn_apg = false;
+        state.linkUp.vn_ia = false;
+        state.selectedHub = 'R_HK';
+        state.syslog = '%OSPF-5-ADJCHG: Nbr 2.2.2.1, 2.2.2.2, 2.2.2.3 DOWN. ECMP Tromboning to R_HK (Cost 37).';
+        notify('Kịch bản 3: Đứt 3 tuyến (AAG, APG, IA)', 'Hồng Kông đi vòng 6 hop qua Nhật Bản & Singapore (ECMP Cost 37 / Metric 38).', '#f59e0b');
+      } else if (n === 4) {
+        state.linkUp.aag_hk = false;
+        state.linkUp.apg_hk = false;
+        state.linkUp.ia_hk = false;
+        state.selectedHub = 'R_HK';
+        state.syslog = '%LINK-5-CHANGED: R_HK Gi0/1, Gi0/2, S0/0/0 administratively down. Route 10.20.1.0/24 removed.';
+        notify('Kịch bản 4: Cô lập Hub Hồng Kông (R_HK)', 'Đã ngắt Gi0/1, Gi0/2, S0/0/0 trên R_HK. Ping tới 10.20.1.10 mất gói 100%.', '#ef4444');
+      } else if (n === 5) {
+        state.syslog = '%OSPF-5-ADJCHG: Process 1, All interfaces restored (no shutdown). Converged to baseline.';
+        notify('Kịch bản 5: Khôi phục kết nối', 'Đã mở lại toàn bộ cổng. OSPF chuyển ngược về tuyến chính (Lưu ý RFC 9855).', '#38bdf8');
+      }
+
+      renderAll();
+    }
+
+    function toggleLink(id) {
+      const link = WAN_LINKS.find(l => l.id === id);
+      if (!link) return;
+      state.linkUp[id] = !state.linkUp[id];
+      state.scenario = 0;
+      const up = state.linkUp[id];
+
+      state.syslog = up
+        ? `%LINK-3-UPDOWN: Interface ${link.a} (${link.ifA}) <-> ${link.b} (${link.ifB}) changed state to up`
+        : `%OSPF-5-ADJCHG: Link ${link.a} (${link.ifA}) <-> ${link.b} (${link.ifB}) DOWN`;
+
+      notify(
+        up ? `Khôi phục liên kết ${link.a} ↔ ${link.b}` : `Ngắt liên kết ${link.a} ↔ ${link.b}`,
+        `Subnet ${link.subnet} (Cost ${link.cost}) • Trạng thái: ${up ? 'UP/UP' : 'DOWN'}`,
+        up ? '#10b981' : '#ef4444'
+      );
+      renderAll();
+    }
+
+    function restoreVnCables() {
+      VN_CABLES.forEach(c => { state.linkUp[c.edgeId] = true; });
+      state.scenario = 0;
+      state.syslog = '%LINK-3-UPDOWN: All 6 WAN interfaces on R_VN_ISP restored to up/up.';
+      notify('Đã mở lại 6 tuyến phía Việt Nam', 'Toàn bộ 6 cổng Serial trên R_VN_ISP đã hoạt động.', '#10b981');
+      renderAll();
+    }
+
+    function toggleIsolateHK() {
+      const isolated = isHkIsolated();
+      HK_PORTS.forEach(p => { state.linkUp[p.edgeId] = isolated; });
+      if (!isolated) {
+        state.scenario = 4;
+        state.selectedHub = 'R_HK';
+        state.syslog = '%LINK-5-CHANGED: R_HK Gi0/1, Gi0/2, S0/0/0 administratively down. HK Isolated.';
+        notify('Cô lập hoàn toàn Hub Hồng Kông', 'Cả 3 cổng trên R_HK đã tắt. Mạng 10.20.1.0/24 không thể truy cập.', '#ef4444');
+      } else {
+        state.scenario = 0;
+        state.syslog = '%LINK-3-UPDOWN: R_HK Gi0/1, Gi0/2, S0/0/0 changed state to up.';
+        notify('Đã mở lại 3 cổng Hub Hồng Kông', 'R_HK đã kết nối trở lại với mạng quốc tế.', '#10b981');
+      }
+      renderAll();
+    }
+
+    function selectTargetHub(hubId) {
+      state.selectedHub = hubId;
+      renderAll();
+    }
+
+    function switchCliTab(tab) {
+      state.cliTab = tab;
+      renderCli();
+    }
+
+    function runPingTest() {
+      state.ecmpToggle = (state.ecmpToggle + 1) % 2;
+      state.cliTab = 'pc';
+      const spt = runDijkstra('R_VN_ISP');
+      const res = spt.getRoutesTo(state.selectedHub);
+      const hub = DEVICES[state.selectedHub];
+      if (res.reachable) {
+        notify(`Ping thành công tới ${hub.hubName}`, `Reply from ${hub.serverIp}: 4/4 packets received • Metric OSPF = ${res.metric}`, '#10b981');
+      } else {
+        notify(`Ping thất bại tới ${hub.hubName}`, `Reply from 192.168.1.1: Destination host unreachable (100% loss)`, '#ef4444');
+      }
+      renderCli(spt);
+      startPacketAnimation();
+    }
+
+    // 5. RENDER TOÀN BỘ GIAO DIỆN
+    function renderAll() {
+      const spt = runDijkstra('R_VN_ISP');
+      const routes = {};
+      HUB_IDS.forEach(h => { routes[h] = spt.getRoutesTo(h); });
+
+      // Cập nhật KPI Header
+      const vnUp = VN_CABLES.filter(c => state.linkUp[c.edgeId]).length;
+      const hkUp = HK_PORTS.filter(p => state.linkUp[p.edgeId]).length;
+
+      document.getElementById('kpiVnCount').textContent = `${vnUp}/6 UP`;
+      document.getElementById('kpiVnDot').className = 'dot ' + (vnUp === 6 ? 'dot-green' : vnUp >= 3 ? 'dot-amber' : 'dot-red');
+      document.getElementById('kpiNeighbors').textContent = `${vnUp} FULL`;
+
+      document.getElementById('kpiHkCount').textContent = hkUp === 0 ? '0/3 CÔ LẬP' : `${hkUp}/3 UP`;
+      document.getElementById('kpiHkDot').className = 'dot ' + (hkUp === 3 ? 'dot-green' : hkUp > 0 ? 'dot-amber' : 'dot-red');
+
+      const stEl = document.getElementById('kpiStatus');
+      if (isHkIsolated() || vnUp === 0) {
+        stEl.textContent = isHkIsolated() ? 'CÔ LẬP HỒNG KÔNG' : 'MẤT KẾT NỐI';
+        stEl.style.color = '#ef4444';
+      } else if (vnUp <= 3) {
+        stEl.textContent = 'ĐỊNH TUYẾN VÒNG (ECMP)';
+        stEl.style.color = '#f59e0b';
+      } else if (vnUp < 6 || hkUp < 3) {
+        stEl.textContent = 'CHUYỂN HƯỚNG DỰ PHÒNG';
+        stEl.style.color = '#38bdf8';
+      } else {
+        stEl.textContent = 'TỐI ƯU (BÌNH THƯỜNG)';
+        stEl.style.color = '#10b981';
+      }
+
+      // Cập nhật nút kịch bản & nút đích
+      [1, 2, 3, 4, 5].forEach(i => {
+        const b = document.getElementById(`scBtn${i}`);
+        b.className = 'scenario-btn' + (state.scenario === i ? (i === 4 ? ' active-danger' : ' active') : '');
+      });
+
+      document.querySelectorAll('.dest-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-hub') === state.selectedHub);
+      });
+
+      renderSwitches();
+      renderHubTable(routes);
+      renderInsight();
+      renderCli(spt);
+      renderSvg(routes);
+    }
+
+    function renderSwitches() {
+      // Nhóm 1: 6 tuyến VN
+      document.getElementById('vnCableSwitches').innerHTML = VN_CABLES.map(c => {
+        const up = state.linkUp[c.edgeId];
+        return `
+          <div class="port-item ${up ? '' : 'down'}">
+            <div class="port-info">
+              <div class="port-top">
+                <span class="dot ${up ? 'dot-green' : 'dot-red'}" style="width:7px;height:7px;"></span>
+                <span>${c.shortName}</span>
+                <span class="port-code">${c.shortIf}</span>
+                <span class="port-cost">Cost ${c.cost}</span>
+              </div>
+              <div class="port-sub">${c.role}</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${up ? 'checked' : ''} onchange="toggleLink('${c.edgeId}')" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        `;
+      }).join('');
+
+      // Nhóm 2: 3 cổng R_HK
+      const isolated = isHkIsolated();
+      const btnIso = document.getElementById('btnToggleHkIsolate');
+      btnIso.textContent = isolated ? 'Mở lại R_HK' : 'Cô lập R_HK';
+      btnIso.className = 'btn-mini ' + (isolated ? 'btn-mini-green' : 'btn-mini-red');
+
+      document.getElementById('hkPortSwitches').innerHTML = HK_PORTS.map(p => {
+        const up = state.linkUp[p.edgeId];
+        return `
+          <div class="port-item ${up ? '' : 'down'}">
+            <div class="port-info">
+              <div class="port-top">
+                <span class="dot ${up ? 'dot-green' : 'dot-red'}" style="width:7px;height:7px;"></span>
+                <span>${p.cableName}</span>
+                <span class="port-code" style="color:#fcd34d;">[${p.shortIf}]</span>
+                <span class="port-cost">Cost ${p.cost}</span>
+              </div>
+              <div class="port-sub">${p.subnet} • ${p.role}</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${up ? 'checked' : ''} onchange="toggleLink('${p.edgeId}')" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHubTable(routes) {
+      document.getElementById('hubMetricsBody').innerHTML = HUB_IDS.map(hId => {
+        const hub = DEVICES[hId];
+        const r = routes[hId];
+        const sel = hId === state.selectedHub;
+
+        if (!r.reachable) {
+          return `
+            <tr class="hub-row isolated ${sel ? 'selected' : ''}" onclick="selectTargetHub('${hId}')">
+              <td><strong>${hub.hubName}</strong><br/><span style="font-family:var(--font-mono);font-size:10.5px;color:#94a3b8;">${hub.serverIp}</span></td>
+              <td style="font-family:var(--font-mono);color:#fca5a5;">Không có đường đi (Unreachable)</td>
+              <td style="text-align:center;font-family:var(--font-mono);color:#fca5a5;">—</td>
+              <td style="text-align:center;font-family:var(--font-mono);color:#fca5a5;">∞</td>
+              <td><span class="status-badge badge-dead">Bị cô lập (100% Loss)</span></td>
+            </tr>
+          `;
+        }
+
+        const p0 = r.paths[0];
+        const hops = p0.nodes.length + 1;
+        let pathText = p0.nodes.slice(1).map(n => n.replace('R_', '')).join(' → ');
+        if (r.paths.length > 1) {
+          const p1Text = r.paths[1].nodes.slice(1).map(n => n.replace('R_', '')).join(' → ');
+          pathText = `<span style="color:#fcd34d;font-weight:700;">ECMP (2 nhánh):</span><br/>1) ${pathText}<br/>2) ${p1Text}`;
+        }
+
+        let badge = `<span class="status-badge badge-ok">Tuyến chính</span>`;
+        if (hops > 4) badge = `<span class="status-badge badge-warn">Định tuyến vòng (${hops} hop)</span>`;
+        else if (r.cost > hub.baseCost) badge = `<span class="status-badge badge-backup">Dự phòng (+${Math.round((r.cost - hub.baseCost) * 100 / hub.baseCost)}%)</span>`;
+
+        return `
+          <tr class="hub-row ${sel ? 'selected' : ''}" onclick="selectTargetHub('${hId}')">
+            <td><strong>${hub.hubName}</strong><br/><span style="font-family:var(--font-mono);font-size:10.5px;color:#94a3b8;">${hub.serverIp}</span></td>
+            <td style="font-family:var(--font-mono);font-size:11px;">${pathText}</td>
+            <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:${hops > 4 ? '#fcd34d' : '#fff'};">${hops}</td>
+            <td style="text-align:center;font-family:var(--font-mono);"><strong>${r.cost}</strong> / ${r.metric}</td>
+            <td>${badge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderInsight() {
+      const title = document.getElementById('insightTitle');
+      const body = document.getElementById('insightBody');
+
+      if (isHkIsolated() || state.scenario === 4) {
+        title.textContent = 'Phân tích Kịch bản 4: Cô lập hoàn toàn Hub Hồng Kông (R_HK)';
+        body.innerHTML = `
+          <p>Khi tắt đồng thời 3 cổng hướng vào Hồng Kông tại router đầu xa <code>R_HK</code> (<code>Gi0/1</code>, <code>Gi0/2</code>, <code>S0/0/0</code>), cụm mạng <code>10.20.1.0/24</code> bị tách rời hoàn toàn khỏi miền định tuyến OSPF Area 0:</p>
+          <ul>
+            <li><strong>Bảng định tuyến R_VN_ISP:</strong> Tuyến đi <code>10.20.1.0/24</code> biến mất hoàn toàn khỏi bảng định tuyến.</li>
+            <li><strong>Kiểm thử đầu cuối:</strong> Lệnh <code>ping 10.20.1.10</code> từ <code>PC_VN1</code> nhận phản hồi <strong>Destination host unreachable</strong> từ <code>192.168.1.1</code>.</li>
+            <li><strong>Khả năng cô lập vùng lỗi:</strong> Các Hub Singapore, Nhật Bản và Âu – Mỹ không bị ảnh hưởng.</li>
+          </ul>
+        `;
+      } else if (state.scenario === 1) {
+        title.textContent = 'Phân tích Kịch bản 1: Trạng thái hoạt động bình thường (6/6 tuyến)';
+        body.innerHTML = `
+          <p>Cả 6 tuyến cáp biển đều hoạt động ổn định, <code>R_VN_ISP</code> thiết lập quan hệ láng giềng <strong>FULL</strong> với cả 6 router cáp:</p>
+          <ul>
+            <li><strong>AAG (Cost 10):</strong> Đảm nhận đồng thời hai hướng trọng yếu là <strong>Hồng Kông</strong> (Cost 15) và <strong>Âu – Mỹ</strong> (Cost 20).</li>
+            <li><strong>IA (Cost 15) &amp; ADC (Cost 12):</strong> Lần lượt phụ trách hướng <strong>Singapore</strong> (Cost 20) và <strong>Nhật Bản</strong> (Cost 17).</li>
+          </ul>
+        `;
+      } else if (state.scenario === 2) {
+        title.textContent = 'Phân tích Kịch bản 2: Đứt đơn tuyến AAG (Ngắt Serial0/0/0 trên R_VN_ISP)';
+        body.innerHTML = `
+          <p>OSPF tự động phát hiện mất láng giềng <code>2.2.2.1 (R_AAG)</code> và chuyển lưu lượng sang tuyến dự phòng cấp 1:</p>
+          <ul>
+            <li><strong>Hồng Kông:</strong> Chuyển sang tuyến <strong>APG</strong>, tổng Cost tăng từ 15 lên <strong>20</strong> (+33,3%).</li>
+            <li><strong>Âu – Mỹ:</strong> Chuyển sang hướng Tây qua <strong>AAE-1</strong>, tổng Cost tăng từ 20 lên <strong>25</strong> (+25%).</li>
+          </ul>
+        `;
+      } else if (state.scenario === 3) {
+        title.textContent = 'Phân tích Kịch bản 3: Đứt đồng thời 3 tuyến AAG, APG và IA phía Việt Nam';
+        body.innerHTML = `
+          <p>Dù 3 tuyến nối thẳng từ Việt Nam đi Hồng Kông đã đứt, router <code>R_HK</code> vẫn thông với nhánh quốc tế của APG và IA. OSPF kích hoạt <strong>định tuyến vòng (tromboning) 6 hop</strong> với cân bằng tải <strong>ECMP (Cost 37 / Metric 38)</strong> qua hai hành lang:</p>
+          <ul>
+            <li><strong>Nhánh qua Nhật Bản:</strong> <code>R_VN_ISP → R_ADC → R_JP → R_APG → R_HK</code> (Cost = 12 + 5 + 10 + 10 = 37).</li>
+            <li><strong>Nhánh qua Singapore:</strong> <code>R_VN_ISP → R_SJC2 → R_SG → R_IA → R_HK</code> (Cost = 12 + 10 + 5 + 10 = 37).</li>
+          </ul>
+        `;
+      } else if (state.scenario === 5) {
+        title.textContent = 'Phân tích Kịch bản 5: Khôi phục kết nối & Bài toán chống dao động (RFC 9855)';
+        body.innerHTML = `
+          <p>Sau lệnh <code>no shutdown</code>, OSPF lập tức chuyển ngược lưu lượng về tuyến chính ban đầu. Trong thực tế vận hành, để tránh mất gói và vòng lặp vi mô khi cáp chập chờn lúc hàn nối (<em>link flapping</em>), cần kết hợp cơ chế trì hoãn chuyển ngược (<em>hysteresis</em>) và chống vòng lặp vi mô theo chuẩn <strong>RFC 9855</strong>.</p>
+        `;
+      } else {
+        title.textContent = 'Phân tích Cấu hình Tùy chỉnh (Custom Topology State)';
+        body.innerHTML = `<p>Thuật toán Dijkstra đang tính toán cây đường đi ngắn nhất (SPT) theo thời gian thực dựa trên trạng thái các dây cáp bạn vừa bật/tắt trên sơ đồ Packet Tracer.</p>`;
+      }
+    }
+
+    // 6. CỬA SỔ CISCO IOS CLI
+    function renderCli(preSpt = null) {
+      const spt = preSpt || runDijkstra('R_VN_ISP');
+      const routes = {};
+      HUB_IDS.forEach(h => { routes[h] = spt.getRoutesTo(h); });
+
+      ['pc', 'route', 'neighbor', 'config'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('active', state.cliTab === t);
+      });
+      document.getElementById('cliSyslog').textContent = state.syslog;
+
+      const screen = document.getElementById('cliScreen');
+      const hub = DEVICES[state.selectedHub];
+      const res = routes[state.selectedHub];
+
+      if (state.cliTab === 'pc') {
+        if (!res.reachable) {
+          screen.textContent =
+`Cisco Packet Tracer PC Command Line 1.0
+PC_VN1 (192.168.1.10 / Default Gateway: 192.168.1.1)
+
+C:\\> ping ${hub.serverIp}
+
+Pinging ${hub.serverIp} with 32 bytes of data:
+Reply from 192.168.1.1: Destination host unreachable.
+Reply from 192.168.1.1: Destination host unreachable.
+Reply from 192.168.1.1: Destination host unreachable.
+Reply from 192.168.1.1: Destination host unreachable.
+
+Ping statistics for ${hub.serverIp}:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)
+
+C:\\> tracert ${hub.serverIp}
+
+Tracing route to ${hub.serverIp} over a maximum of 30 hops:
+  1  192.168.1.1  reports: Destination host unreachable.
+
+Trace complete.`;
+        } else {
+          const p = res.paths[state.ecmpToggle % res.paths.length];
+          const hopList = [
+            { ip: '192.168.1.1', name: 'R_VN_ISP (Cổng biên VN)' },
+            ...p.ips.map((ip, idx) => ({ ip, name: p.nodes[idx + 1] })),
+            { ip: hub.serverIp, name: `${hub.serverId} (${hub.hubName})` }
+          ];
+          const ecmpNote = res.paths.length > 1
+            ? `\n[OSPF ECMP] Đang hiển thị nhánh ${(state.ecmpToggle % res.paths.length) + 1}/${res.paths.length} (Bấm "Chạy Ping / Tracert" để xem nhánh còn lại)\n`
+            : '';
+          const lines = hopList.map((h, i) =>
+            `  ${i + 1}    <1 ms    <1 ms    <1 ms  ${h.ip.padEnd(15)} [${h.name}]`
+          ).join('\n');
+
+          screen.textContent =
+`Cisco Packet Tracer PC Command Line 1.0
+PC_VN1 (192.168.1.10 / Default Gateway: 192.168.1.1)
+
+C:\\> ping ${hub.serverIp}
+
+Pinging ${hub.serverIp} with 32 bytes of data:
+Reply from ${hub.serverIp}: bytes=32 time<1ms TTL=${129 - hopList.length}
+Reply from ${hub.serverIp}: bytes=32 time<1ms TTL=${129 - hopList.length}
+Reply from ${hub.serverIp}: bytes=32 time<1ms TTL=${129 - hopList.length}
+Reply from ${hub.serverIp}: bytes=32 time<1ms TTL=${129 - hopList.length}
+
+Ping statistics for ${hub.serverIp}:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)
+
+C:\\> tracert ${hub.serverIp}
+${ecmpNote}
+Tracing route to ${hub.serverIp} over a maximum of ${hopList.length} hops (Cost WAN = ${res.cost}, Metric = ${res.metric}):
+${lines}
+
+Trace complete.`;
+        }
+      } else if (state.cliTab === 'route') {
+        const order = ['R_SG', 'R_HK', 'R_JP', 'R_US_EU'];
+        const activeHubs = order.filter(h => routes[h].reachable);
+        let out = `R_VN_ISP# show ip route ospf\nCodes: O - OSPF intra-area, IA - OSPF inter-area\n\n`;
+        if (activeHubs.length === 0) {
+          out += `% No remote 10.x.1.0/24 OSPF routes in routing table.\n`;
+        } else {
+          out += `     10.0.0.0/24 is subnetted, ${activeHubs.length} subnets\n`;
+          activeHubs.forEach(hId => {
+            const hObj = DEVICES[hId];
+            const rObj = routes[hId];
+            rObj.paths.forEach((p, idx) => {
+              const firstLink = p.links[0];
+              const vnCable = VN_CABLES.find(c => c.edgeId === firstLink.id);
+              if (idx === 0) {
+                out += `O       ${hObj.subnet.replace('/24', '')} [110/${rObj.metric}] via ${firstLink.ipB}, 00:02:15, ${vnCable.vnIf}   (${hObj.hubName})\n`;
+              } else {
+                out += `                    [110/${rObj.metric}] via ${firstLink.ipB}, 00:02:15, ${vnCable.vnIf}   (ECMP nhánh ${idx + 1})\n`;
+              }
+            });
+          });
+        }
+        if (!routes['R_HK'].reachable) {
+          out += `\nR_VN_ISP# show ip route 10.20.1.0\n% Network not in table (Hub Hồng Kông đã bị cô lập khỏi OSPF Area 0)\n`;
+        }
+        screen.textContent = out;
+      } else if (state.cliTab === 'neighbor') {
+        const upVn = VN_CABLES.filter(c => state.linkUp[c.edgeId]);
+        let out = `R_VN_ISP# show ip ospf neighbor\n\nNeighbor ID     Pri   State           Dead Time   Address         Interface\n`;
+        if (upVn.length === 0) {
+          out += `% No active OSPF neighbors on R_VN_ISP.\n`;
+        } else {
+          upVn.forEach((c, i) => {
+            out += `${c.rid.padEnd(16)}0   FULL/  -        00:00:${38 - i}    ${c.peerIp.padEnd(16)}${c.vnIf}\n`;
+          });
+        }
+        out += `\nR_HK# show ip interface brief | exclude unassigned\nInterface              IP-Address      OK? Method Status                Protocol\n`;
+        HK_PORTS.forEach(p => {
+          const up = state.linkUp[p.edgeId];
+          out += `${p.hkIf.padEnd(23)}${p.hkIp.padEnd(16)}YES manual ${up ? 'up                    up' : 'administratively down down'}\n`;
+        });
+        out += `GigabitEthernet0/0     10.20.1.1       YES manual up                    up\n`;
+        screen.textContent = out;
+      } else if (state.cliTab === 'config') {
+        const downVn = VN_CABLES.filter(c => !state.linkUp[c.edgeId]);
+        const downHk = HK_PORTS.filter(p => !state.linkUp[p.edgeId]);
+        let out = `! Cấu hình giao diện tương ứng trạng thái hiện tại trên Packet Tracer\n\n`;
+        out += `=== 1. Router R_VN_ISP ===\n`;
+        if (downVn.length === 0) {
+          out += `! Tất cả 6 cổng WAN trên R_VN_ISP đang mở (no shutdown)\n`;
+        } else {
+          out += `R_VN_ISP(config)#\n` + downVn.map(c => ` interface ${c.vnIf}\n  shutdown   ! Ngắt tuyến ${c.shortName}`).join('\n') + `\n end\n`;
+        }
+        out += `\n=== 2. Router R_HK (Hub Hồng Kông) ===\n`;
+        if (downHk.length === 0) {
+          out += `! Tất cả 3 cổng vào Hồng Kông trên R_HK đang mở (no shutdown)\n`;
+        } else {
+          out += `R_HK(config)#\n` + downHk.map(p => ` interface ${p.hkIf}\n  shutdown   ! Ngắt nhánh ${p.cableName}`).join('\n') + `\n end\n`;
+        }
+        screen.textContent = out;
+      }
+    }
+
+    // 7. VẼ SƠ ĐỒ SVG PACKET TRACER & GÓI TIN ĐỘNG
+    let animId = null;
+    let packetPaths = [];
+
+    function renderSvg(routes) {
+      const targetHub = DEVICES[state.selectedHub];
+      const activeRoute = routes[state.selectedHub];
+      const hkIsolated = isHkIsolated();
+
+      // Cập nhật thanh banner trên khung Packet Tracer
+      const banner = document.getElementById('ptStatusBanner');
+      if (!activeRoute.reachable) {
+        banner.style.color = '#dc2626';
+        banner.textContent = `Đích: ${targetHub.serverId} (${targetHub.serverIp}) | CẢNH BÁO: HUB BỊ CÔ LẬP (UNREACHABLE)`;
+      } else {
+        banner.style.color = activeRoute.paths.length > 1 ? '#b45309' : '#0369a1';
+        banner.textContent = `Đích: ${targetHub.serverId} (${targetHub.serverIp}) | Cost WAN: ${activeRoute.cost} (Metric: ${activeRoute.metric}) | ${activeRoute.paths[0].nodes.length + 1} Hop` +
+          (activeRoute.paths.length > 1 ? ' [ECMP 2 NHÁNH]' : '');
+      }
+
+      const activeLinkIds = new Set();
+      if (activeRoute.reachable) {
+        activeRoute.paths.forEach(p => p.links.forEach(l => activeLinkIds.add(l.id)));
+      }
+
+      // 1. Vẽ dây LAN đen chuẩn Packet Tracer
+      document.getElementById('layerLanLinks').innerHTML = LAN_LINKS.map(l => {
+        const a = DEVICES[l.a];
+        const b = DEVICES[l.b];
+        const isHkLan = l.a.includes('HK') || l.b.includes('HK');
+        const col = (isHkLan && hkIsolated) ? '#dc2626' : '#1e293b';
+        return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${col}" stroke-width="2" />`;
+      }).join('');
+
+      // 2. Vẽ 19 liên kết WAN + chấm trạng thái xanh/đỏ ở hai đầu dây
+      let wanSvg = '';
+      let activeSvg = '';
+      let labelSvg = '';
+
+      WAN_LINKS.forEach(l => {
+        const a = DEVICES[l.a];
+        const b = DEVICES[l.b];
+        const up = state.linkUp[l.id];
+        const isSelectedRoute = up && activeLinkIds.has(l.id);
+        const isEcmp = isSelectedRoute && activeRoute.paths.length > 1;
+
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy);
+        const ux = dx / dist;
+        const uy = dy / dist;
+
+        const p1x = a.x + ux * 29;
+        const p1y = a.y + uy * 29;
+        const p2x = b.x - ux * 29;
+        const p2y = b.y - uy * 29;
+
+        // Vùng click tàng hình rộng 16px giúp bấm cực dễ
+        wanSvg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="transparent" stroke-width="16" class="link-hitarea" onclick="toggleLink('${l.id}')" onmouseenter="showLinkTip(event,'${l.id}')" onmouseleave="hideTip()" />`;
+
+        if (!up) {
+          wanSvg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#dc2626" stroke-width="2.4" class="severed-dash wan-line" pointer-events="none" />`;
+        } else {
+          // Màu đỏ đặc trưng cho cáp Serial từ VN sang cáp, nét đứt đậm cho cáp quang nhánh quốc tế giống ảnh báo cáo
+          const baseStroke = l.isVn ? '#dc2626' : '#334155';
+          const dashAttr = l.isVn ? '' : 'stroke-dasharray="6 4"';
+          wanSvg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${baseStroke}" stroke-width="2.2" ${dashAttr} class="wan-line" pointer-events="none" />`;
+        }
+
+        // Đường tô sáng nếu đang dẫn lưu lượng kiểm thử
+        if (isSelectedRoute) {
+          activeSvg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${isEcmp ? '#f59e0b' : '#0284c7'}" stroke-width="4.5" stroke-linecap="round" pointer-events="none" />`;
+        }
+
+        // Chấm trạng thái cổng (Xanh lá #16a34a khi UP, Đỏ #dc2626 khi DOWN)
+        const portColor = up ? '#16a34a' : '#dc2626';
+        wanSvg += `
+          <circle cx="${p1x}" cy="${p1y}" r="4.2" fill="${portColor}" stroke="#ffffff" stroke-width="1.2" pointer-events="none" />
+          <circle cx="${p2x}" cy="${p2y}" r="4.2" fill="${portColor}" stroke="#ffffff" stroke-width="1.2" pointer-events="none" />
+        `;
+
+        // Nhãn OSPF Cost trên từng liên kết
+        const lx = a.x + dx * (l.t || 0.5);
+        const ly = a.y + dy * (l.t || 0.5);
+
+        if (!up) {
+          labelSvg += `
+            <g transform="translate(${lx},${ly})" style="cursor:pointer;" onclick="toggleLink('${l.id}')">
+              <rect x="-22" y="-9" width="44" height="18" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.2" />
+              <text x="0" y="3.5" text-anchor="middle" fill="#b91c1c" font-size="9.5" font-family="monospace" font-weight="800">✕ ĐỨT</text>
+            </g>
+          `;
+        } else {
+          const text = l.isVn ? `${l.ifA}:${l.cost}` : (l.isHk ? `${l.ifB}:${l.cost}` : `${l.cost}`);
+          const w = (l.isVn || l.isHk) ? 54 : 22;
+          const bg = isSelectedRoute ? (isEcmp ? '#fef3c7' : '#e0f2fe') : '#ffffff';
+          const bd = isSelectedRoute ? (isEcmp ? '#d97706' : '#0284c7') : '#94a3b8';
+          const fg = isSelectedRoute ? (isEcmp ? '#92400e' : '#0369a1') : '#1e293b';
+          labelSvg += `
+            <g transform="translate(${lx},${ly})" style="cursor:pointer;" onclick="toggleLink('${l.id}')">
+              <rect x="${-w / 2}" y="-9" width="${w}" height="18" rx="4" fill="${bg}" stroke="${bd}" stroke-width="1.1" />
+              <text x="0" y="3.5" text-anchor="middle" fill="${fg}" font-size="9.5" font-family="monospace" font-weight="700">${text}</text>
+            </g>
+          `;
+        }
+      });
+
+      document.getElementById('layerWanLinks').innerHTML = wanSvg;
+      document.getElementById('layerActivePaths').innerHTML = activeSvg;
+      document.getElementById('layerCostLabels').innerHTML = labelSvg;
+
+      // 3. Vẽ các thiết bị mạng (Devices)
+      document.getElementById('layerDevices').innerHTML = Object.values(DEVICES).map(d => {
+        const isDest = d.id === targetHub.id || d.id === targetHub.serverId;
+        const isIsoNode = d.id === 'R_HK' && hkIsolated;
+        const clickAttr = HUB_IDS.includes(d.id) ? `onclick="selectTargetHub('${d.id}')"` : '';
+        return `
+          <g transform="translate(${d.x},${d.y})" style="cursor:pointer;" ${clickAttr}
+             onmouseenter="showNodeTip(event,'${d.id}')" onmouseleave="hideTip()">
+            ${isDest && !isIsoNode ? `<circle cx="0" cy="0" r="29" fill="none" stroke="#0284c7" stroke-width="2" stroke-dasharray="4 3" />` : ''}
+            ${isIsoNode ? `<circle cx="0" cy="0" r="32" fill="rgba(220,38,38,0.2)" stroke="#dc2626" stroke-width="2.5" class="pulse-ring" />` : ''}
+            <use href="#${d.icon}" />
+            <text x="0" y="23" text-anchor="middle" fill="${isIsoNode ? '#b91c1c' : '#0f172a'}" font-size="11" font-weight="800">${d.label}</text>
+            ${d.sub ? `<text x="0" y="34" text-anchor="middle" fill="#334155" font-size="9.5" font-family="monospace" font-weight="600">${d.sub}</text>` : ''}
+          </g>
+        `;
+      }).join('');
+
+      // 4. Cảnh báo đỏ khi Hồng Kông bị cô lập
+      document.getElementById('layerAlerts').innerHTML = hkIsolated
+        ? `<g transform="translate(905, 155)" pointer-events="none">
+             <rect x="-112" y="-12" width="224" height="22" rx="5" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5" />
+             <text x="0" y="3" text-anchor="middle" fill="#ffffff" font-size="10.5" font-family="monospace" font-weight="800">ISOLATED / UNREACHABLE</text>
+           </g>`
+        : '';
+
+      // 5. Cập nhật quỹ đạo gói tin
+      packetPaths = [];
+      const swNode = DEVICES[targetHub.id.replace('R_', 'SW_')];
+      const srvNode = DEVICES[targetHub.serverId];
+
+      if (!activeRoute.reachable) {
+        packetPaths.push({
+          pts: [DEVICES.PC_VN1, DEVICES.SW_VN, DEVICES.R_VN_ISP, DEVICES.SW_VN, DEVICES.PC_VN1],
+          color: '#dc2626',
+          offset: 0
+        });
+      } else {
+        const isEcmp = activeRoute.paths.length > 1;
+        activeRoute.paths.forEach((p, idx) => {
+          packetPaths.push({
+            pts: [DEVICES.PC_VN1, DEVICES.SW_VN, ...p.nodes.map(id => DEVICES[id]), swNode, srvNode],
+            color: isEcmp ? (idx === 0 ? '#0284c7' : '#d97706') : '#0284c7',
+            offset: idx * 0.22
+          });
+        });
+      }
+
+      startPacketAnimation();
+    }
+
+    function startPacketAnimation() {
+      if (animId) cancelAnimationFrame(animId);
+      const layer = document.getElementById('layerPackets');
+      const t0 = performance.now();
+
+      function tick(now) {
+        const elapsed = (now - t0) / 1000;
+        const duration = 3.0;
+        let svg = '';
+
+        packetPaths.forEach(traj => {
+          const pts = traj.pts;
+          if (pts.length < 2) return;
+          let total = 0;
+          const lens = [];
+          for (let i = 0; i < pts.length - 1; i++) {
+            const d = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+            lens.push(d);
+            total += d;
+          }
+
+          [0, 0.5].forEach(sub => {
+            const prog = ((elapsed / duration) + traj.offset + sub) % 1;
+            let dist = prog * total;
+            for (let i = 0; i < lens.length; i++) {
+              if (dist <= lens[i] || i === lens.length - 1) {
+                const r = lens[i] === 0 ? 0 : Math.min(1, dist / lens[i]);
+                const x = pts[i].x + (pts[i + 1].x - pts[i].x) * r;
+                const y = pts[i].y + (pts[i + 1].y - pts[i].y) * r;
+                svg += `
+                  <g transform="translate(${x},${y})" pointer-events="none">
+                    <rect x="-8" y="-6" width="16" height="12" rx="2.5" fill="${traj.color}" stroke="#ffffff" stroke-width="1.5" />
+                    <path d="M-7 -5 L0 1 L7 -5" stroke="#ffffff" stroke-width="1.2" fill="none" />
+                  </g>
+                `;
+                break;
+              }
+              dist -= lens[i];
+            }
+          });
+        });
+
+        layer.innerHTML = svg;
+        animId = requestAnimationFrame(tick);
+      }
+
+      animId = requestAnimationFrame(tick);
+    }
+
+    // 8. TOOLTIP CHI TIẾT
+    function showNodeTip(e, id) {
+      const d = DEVICES[id];
+      const tip = document.getElementById('ptTooltip');
+      tip.innerHTML = `<strong style="color:#38bdf8;">${d.label}</strong><div style="margin-top:2px;color:#cbd5e1;">${d.desc}</div>`;
+      moveTip(e, tip);
+    }
+
+    function showLinkTip(e, id) {
+      const l = WAN_LINKS.find(x => x.id === id);
+      const up = state.linkUp[id];
+      const tip = document.getElementById('ptTooltip');
+      tip.innerHTML = `
+        <strong style="color:${up ? '#6ee7b7' : '#fca5a5'};">${l.a} (${l.ifA}) ↔ ${l.b} (${l.ifB}) [${up ? 'UP' : 'DOWN'}]</strong>
+        <div style="font-family:monospace;margin-top:2px;">Subnet: ${l.subnet} (${l.ipA} ↔ ${l.ipB})</div>
+        <div style="color:#fcd34d;margin-top:2px;">OSPF Cost: ${l.cost} • Click dây để ngắt/nối</div>
+      `;
+      moveTip(e, tip);
+    }
+
+    function moveTip(e, tip) {
+      tip.style.display = 'block';
+      let x = e.clientX + 14;
+      let y = e.clientY + 14;
+      if (x + 290 > window.innerWidth) x = e.clientX - 290;
+      if (y + 85 > window.innerHeight) y = e.clientY - 85;
+      tip.style.left = Math.max(8, x) + 'px';
+      tip.style.top = Math.max(8, y) + 'px';
+    }
+
+    function hideTip() {
+      document.getElementById('ptTooltip').style.display = 'none';
+    }
+
+    // Khởi chạy ngay khi tải xong trang
+    window.onload = function () {
+      renderAll();
+    };
+  </script>
+</body>
+</html>
